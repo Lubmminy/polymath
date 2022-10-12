@@ -1,5 +1,5 @@
 [package]
-name = "Polymath"
+name = "polymath"
 version = "0.1.0"
 edition = "2021"
 
@@ -16,4 +16,6 @@ debug = true
 
 [dependencies]
 hyper = { version = "0.14", features = ["full"] }
+hyper-tls = "0.5.0"
 tokio = { version = "1", features = ["full"] }
+tonic = "0.8.2"
