@@ -1,10 +1,10 @@
 use hyper::{Client, client::{HttpConnector, connect::dns::GaiResolver}, Body, Method, Request};
 use hyper::body::HttpBody;
 
-pub async fn get(_url: String, client: Client<hyper_tls::HttpsConnector<HttpConnector<GaiResolver>>, Body>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub async fn get(url: String, client: Client<hyper_tls::HttpsConnector<HttpConnector<GaiResolver>>, Body>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let req = Request::builder()
         .method(Method::GET)
-        .uri("http://httpbin.org/headers")
+        .uri(url)
         .header("User-Agent", "Gravitaliabot/0.1")
         .body(Body::from(r#"{"sorry":"we're crawling"}"#))?;
 
