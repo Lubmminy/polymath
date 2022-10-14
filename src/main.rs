@@ -6,5 +6,5 @@ mod helpers;
 async fn main() {
     let client = Client::builder().build::<_, hyper::Body>(HttpsConnector::new());
 
-    println!("{:?}", helpers::get::get("test".to_string(), client).await);
+    println!("{:?}", helpers::get::get("https://www.gravitalia.studio/".to_string(), client).await);
 }
