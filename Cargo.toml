@@ -3,6 +3,14 @@ name = "polymath"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "server"
+path = "src/server.rs"
+
+[[bin]]
+name = "client"
+path = "src/client.rs"
+
 [profile.release]
 opt-level = 3
 lto = true
@@ -19,3 +27,6 @@ hyper = { version = "0.14", features = ["full"] }
 hyper-tls = "0.5.0"
 tokio = { version = "1", features = ["full"] }
 tonic = "0.8.2"
+
+[build-dependencies]
+tonic-build = "0.8.2"
