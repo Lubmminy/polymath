@@ -15,7 +15,7 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "io.grpc.polymath.crawl";
+option java_package = "studio.gravitalia.polymath.crawl";
 option java_outer_classname = "CrawlProto";
 
 package crawl;
