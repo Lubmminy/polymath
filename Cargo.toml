@@ -23,10 +23,16 @@ opt-level = 0
 debug = true
 
 [dependencies]
-hyper = { version = "0.14", features = ["full"] }
+hyper = { version = "0.14", features = [ "full" ] }
 hyper-tls = "0.5.0"
-tokio = { version = "1", features = ["full"] }
-tonic = "0.8.2"
+
+tonic = { version = "0.8.2", features = [ "tls", "gzip" ] }
+tokio = { version = "1.0", features = [ "rt-multi-thread", "time", "fs", "macros", "net" ] }
+futures = { version = "0.3", default-features = false, features = [ "alloc" ] }
+
+dotenv = "0.15.0"
+prost = "0.11"
+prost-types = "0.11"
 
 [build-dependencies]
-tonic-build = "0.8.2"
+tonic-build = { version = "0.8.2", features = [ "prost" ] }
