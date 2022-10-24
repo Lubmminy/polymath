@@ -5,6 +5,7 @@ use crawl::{CrawlReply, CrawlRequest};
 
 use hyper::{Client, client::{HttpConnector, connect::dns::GaiResolver}, Body};
 use hyper_tls::HttpsConnector;
+use url::Url;
 
 mod helpers;
 pub mod crawl {
@@ -24,7 +25,17 @@ impl Crawler for PolyMath {
         let url = request.into_inner().url;
         println!("Got a request for crawling {:?}", url);
 
-        println!("{:?}", helpers::get::get(&url, self.client.clone()).await);
+        let site_url = Url::parse(&url).unwrap();
+        if site_url.scheme() != "https" {
+            let err_res = CrawlReply {
+                message: "Please use HTTPS scheme".to_string(),
+                error: true
+            };
+            println!("Can't crawl it: invalid scheme");
+            return Ok(Response::new(err_res))
+        }
+
+        let _ = helpers::get::init(format!("https://{}", site_url.host_str().unwrap()), self.client.clone()).await;
 
         let reply = CrawlReply {
             message: format!("Crawling {}...", url),
