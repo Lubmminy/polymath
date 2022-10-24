@@ -1,20 +1,24 @@
 use hyper::{Client, client::{HttpConnector, connect::dns::GaiResolver}, Body, Method, Request, Version};
 use async_recursion::async_recursion;
-use hyper::body::HttpBody;
 use robotstxt::DefaultMatcher;
 use std::str;
 use url::Url;
+use hyper::body;
 
 pub async fn init(homepage: String, client: Client<hyper_tls::HttpsConnector<HttpConnector<GaiResolver>>, Body>) -> Result<&'static str, Box<dyn std::error::Error + Send + Sync>> {
     println!("Start crawling {}...", homepage);
-    let robots = get(&format!("{}/robots.txt", homepage), client.clone(), "User-Agent: *\nAllow: /\n".to_string()).await;
+    let robots = get(&format!("{}/robots.txt", homepage), client.clone(), "User-Agent: *\nAllow: /\n".to_string()).await?;
 
-    let res = get(&homepage, client, robots.unwrap()).await.unwrap();
-    println!("{}", res);
-    if res == "not allowed".to_string() {
-        Ok("not allowed")
-    } else {
-        Ok("crawling")
+    let res = get(&homepage, client, robots).await;
+    match res {
+        Ok(v) => {
+            if v == "not allowed".to_string() {
+                Ok("not allowed")
+            } else {
+                Ok("crawling")
+            }
+        },
+        Err(_) => Ok("not allowed"),
     }
 }
 
@@ -33,33 +37,34 @@ pub async fn get(url: &String, client: Client<hyper_tls::HttpsConnector<HttpConn
         .header("Accept-Language", "en-US;q=0.9,en;q=0.8")
         .version(Version::HTTP_11)
         .body(Body::default())?;
-    let mut res = client.request(req).await?;
+    let res = client.request(req).await?;
 
     if !regex::Regex::new(r"[2|3][0|2][0-9]").unwrap().is_match(res.status().as_str()) {
         return Ok("status".to_string())
     }
-    
-    while let Some(chunk) = res.body_mut().data().await {
-        //let test = &chunk;
-        for site in regex::bytes::Regex::new("https:/{2}([a-z|0-9|-|_]*.){0,10}[.]([a-z]{2,63})").unwrap().captures(&chunk?) {
-            println!("Find an URL: {}", str::from_utf8(site.get(0).unwrap().as_bytes())?.to_string());
-            if ![ "webp", "png", "xml", "toml", "jpg", "tiff", "gif", "txt", "avif" ].contains(&str::from_utf8(site.get(2).unwrap().as_bytes()).unwrap()) {
-                let site_url = str::from_utf8(site.get(0).unwrap().as_bytes())?.to_string();
-                if Url::parse(&url).unwrap().host_str().unwrap() == Url::parse(&site_url).unwrap().host_str().unwrap() {
-                    get(&site_url, client.clone(), robots.clone()).await;
-                } else {
-                    println!("here");
-                    // add queue normally
-                    init(Url::parse(&site_url).unwrap().host_str().unwrap().to_string(), client.clone()).await;
+
+    let body_res = String::from_utf8(body::to_bytes(res.into_body()).await?.to_vec()).expect("response was not valid utf-8");
+    println!("{} URLs in {}", regex::Regex::new("https:/{2}[a-z|0-9|-|_]*[.]?[a-z|0-9|-|_]{1,256}[.][a-z]{2,63}(/[A-z|0-9|_|~|/|-]*)?[.]?([a-z]{1,15})?").unwrap().find_iter(&body_res).count(), &url);
+    for site in regex::Regex::new("https:/{2}[a-z|0-9|-|_]*[.]?[a-z|0-9|-|_]{1,256}[.][a-z]{2,63}(/[A-z|0-9|_|~|/|-]*)?[.]?([a-z]{1,15})?").unwrap().captures_iter(&body_res) {
+        let ext = if site.get(2).is_some() {
+            site.get(2).unwrap().as_str()
+        } else { "ok" };
+
+        if ![ "webp", "png", "xml", "toml", "jpg", "tiff", "gif", "txt", "avif" ].contains(&ext) {
+            let site_url = site.get(0).unwrap().as_str();
+            println!("{}", site_url);
+            if Url::parse(&url).unwrap().host_str().unwrap() == Url::parse(&site_url).unwrap().host_str().unwrap() {
+                if Url::parse(&site_url).unwrap().path() != Url::parse(&url).unwrap().path() {
+                    let _ = get(&site_url.to_string(), client.clone(), robots.clone()).await;
                 }
-                println!("{:?}", str::from_utf8(site.get(0).unwrap().as_bytes())?.to_string());
             } else {
-                // download and analyze images and files here
+                println!("New site discovered: {}", Url::parse(&site_url).unwrap().host_str().unwrap());
+                // add queue normally using NATS
+                let _ = init(Url::parse(&site_url).unwrap().host_str().unwrap().to_string(), client.clone()).await;
             }
         }
-        //return Ok(str::from_utf8(&chunk?).unwrap().to_string())
-        return Ok("crawled".to_string())
     }
+    println!("\n----------------------------\n");
 
-    Ok("error".to_string())
+    Ok(body_res)
 }
