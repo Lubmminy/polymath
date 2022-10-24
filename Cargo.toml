@@ -30,9 +30,15 @@ tonic = { version = "0.8.2", features = [ "tls", "gzip" ] }
 tokio = { version = "1.0", features = [ "rt-multi-thread", "time", "fs", "macros", "net" ] }
 futures = { version = "0.3", default-features = false, features = [ "alloc" ] }
 
+async-recursion = "1.0.0"
 dotenv = "0.15.0"
 prost = "0.11"
 prost-types = "0.11"
+regex = "1.6.0"
+robotstxt = "0.3.0"
+url = "2.3.1"
+
+async-nats = "0.21.0"
 
 [build-dependencies]
 tonic-build = { version = "0.8.2", features = [ "prost" ] }
