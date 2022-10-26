@@ -23,7 +23,6 @@ impl Crawler for PolyMath {
         request: Request<CrawlRequest>,
     ) -> Result<Response<CrawlReply>, Status> {
         let url = request.into_inner().url;
-        println!("Got a request for crawling {:?}", url);
 
         let site_url = Url::parse(&url).unwrap();
         if site_url.scheme() != "https" {
@@ -35,7 +34,7 @@ impl Crawler for PolyMath {
             return Ok(Response::new(err_res))
         }
 
-        let _ = helpers::get::init(format!("https://{}", site_url.host_str().unwrap()), self.client.clone()).await;
+        let _ = helpers::get::init(format!("https://{}", site_url.host_str().unwrap()), &self.client).await;
 
         let reply = CrawlReply {
             message: format!("Crawling {}...", url),
@@ -49,8 +48,20 @@ impl Crawler for PolyMath {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "[::1]:50051".parse().unwrap();
 
-    println!("Server listening on {}", addr);
+    let mut already_crawled: Vec<String> = [].to_vec();
 
+    tokio::spawn(async move {
+        for msg in helpers::nats::init().await.unwrap().messages() {
+            if already_crawled.contains(&std::str::from_utf8(&msg.data).unwrap().to_string()) {
+                already_crawled.push(std::str::from_utf8(&msg.data).unwrap().to_string());
+                tokio::spawn(async move {
+                    let _ = helpers::get::init(std::str::from_utf8(&msg.data).unwrap().to_string(), &Client::builder().build::<_, hyper::Body>(HttpsConnector::new())).await;
+                });
+            }
+        }
+    });
+
+    println!("Server listening on {}", addr);
     Server::builder()
         .add_service(CrawlerServer::new(PolyMath { client: Client::builder().build::<_, hyper::Body>(HttpsConnector::new()) }))
         .serve(addr)
