@@ -1,0 +1,21 @@
+[workspace]
+resolver = "2"
+members = [
+    "polymath",
+    "polymath-queue",
+]
+
+[workspace.package]
+version = "1.0.0"
+description = "web crawler"
+readme = "README.md"
+edition = "2021"
+license = "Apache-2.0"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+debug = false

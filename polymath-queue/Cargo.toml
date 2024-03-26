@@ -1,0 +1,10 @@
+[package]
+name = "polymath-queue"
+version.workspace = true
+readme.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "queue management for spam-free crawl websites"
+
+[dependencies]
+num_cpus = "1"

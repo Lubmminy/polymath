@@ -1,0 +1,10 @@
+[package]
+name = "polymath"
+version.workspace = true
+readme.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "public api to crawl selected websites"
+
+[dependencies]
+polymath-queue = { path = "../polymath-queue" }
