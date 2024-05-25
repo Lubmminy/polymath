@@ -4,6 +4,37 @@
 Here, it is a robot that will analyze the Web pages (**Crawler**) and that will bring a mass of knowledge to the world.
 Billions of sources will be analyzed to redistribute all the knowledge to the __**users**__!
 
+## Architecture
+```mermaid
+flowchart TD
+    subgraph "Crawl Webpage"
+        Y[Web Server] -->|Produce| Z(Kafka Topic)
+    end
+
+    subgraph "Polymath Consumer"
+        Z -->|Consume| B(Crawling Consumer)
+    end
+
+    subgraph "Crawling Consumer"
+        B --> C[(Crawling Queue)]
+        C -->|Crawling| D[Fetch Page]
+        D -->|Queuing| C
+    end
+
+    subgraph "Data Processing"
+        D --> E[Data Processing]
+        E --> F[Image Processing]
+        E --> G[PDF Processing]
+        E --> H[HTML Processing]
+    end
+
+    subgraph "Indexing"
+        H -->|Scoring| I[(Memgraph)]
+        I -->|Indexing| J[(Apache Solr)]
+        G -->|Indexing| J
+    end
+```
+
 ## Feature highlights
 - Support PDF
 
