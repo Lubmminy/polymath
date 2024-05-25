@@ -1,8 +1,15 @@
 [workspace]
 resolver = "2"
 members = [
-    "polymath",
-    "polymath-queue",
+    "crates/polymath",
+    "crates/polymath-cache",
+    "crates/polymath-crawler",
+    "crates/polymath-db",
+    "crates/polymath-error",
+    "crates/polymath-queue",
+
+    "extensions/robots",
+    "extensions/sitemap",
 ]
 
 [workspace.package]
