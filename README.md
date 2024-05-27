@@ -40,4 +40,4 @@ flowchart TD
 
 ## License
 
-This project is Licensed under [Apache, Version 2.0](https://github.com/Lubmminy/Polymath/blob/master/LICENSE).
+This project is Licensed under [Apache License, Version 2.0](https://github.com/Lubmminy/Polymath/blob/master/LICENSE).
