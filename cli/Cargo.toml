@@ -1,0 +1,14 @@
+[package]
+name = "polymath-cli"
+version.workspace = true
+description.workspace = true
+readme.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+clap = "4.5"
+clap_builder = { version = "4.5", features = ["cargo"] }
+clap_derive = "4.5"
+url = "2.5"
+polymath-crawler = { path = "../crates/polymath-crawler" }
