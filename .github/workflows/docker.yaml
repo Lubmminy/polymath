@@ -34,5 +34,5 @@ jobs:
       run: |
             docker build -f docker/Dockerfile -t ghcr.io/lubmminy/polymath:latest .
             docker push ghcr.io/lubmminy/polymath:latest
-            docker tag ghcr.io/lubmminy/polymath:latest ghcr.io/gravitalia/remini:${{ steps.get-tag.outputs.PKG_VERSION }}
+            docker tag ghcr.io/lubmminy/polymath:latest ghcr.io/lubmminy/polymath:${{ steps.get-tag.outputs.PKG_VERSION }}
             docker push ghcr.io/lubmminy/polymath:${{ steps.get-tag.outputs.PKG_VERSION }}
