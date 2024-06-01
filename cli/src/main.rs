@@ -1,15 +1,11 @@
 //! command-line on Polymath.
 
-use clap::{
-    command,
-    error::{ContextKind, ContextValue, ErrorKind},
-    Error, Parser as _,
-};
-use clap_derive::{Parser, Subcommand};
-use url::Url;
+mod crawl;
 
-/// Max depth value allowed on cli.
-const MAX_DEPTH: usize = 100;
+use clap::{command, Parser as _};
+use clap_derive::{Parser, Subcommand};
+use std::path::PathBuf;
+use url::Url;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -26,9 +22,14 @@ enum Commands {
         /// Number of crawled pages.
         #[arg(short, long)]
         max_depth: Option<usize>,
-        /// Whether we follow `/robots.txt`.
-        #[arg(short, long)]
+        /// Whether crawler follow `/robots.txt`.
+        #[arg(long)]
         robots_txt: Option<bool>,
+        /// Directory for saving HTML content of pages.
+        /// 
+        /// If not set, do not save anything.
+        #[arg(short, long)]
+        path: Option<PathBuf>,
     },
 }
 
@@ -40,37 +41,16 @@ fn main() {
             url,
             max_depth,
             robots_txt,
+            path,
         } => {
-            let max_depth = max_depth.unwrap_or(1);
-
-            if max_depth > MAX_DEPTH {
-                let mut err = Error::new(ErrorKind::ValueValidation);
-                err.insert(
-                    ContextKind::InvalidArg,
-                    ContextValue::String("--max-depth".to_owned()),
-                );
-                err.insert(
-                    ContextKind::InvalidValue,
-                    ContextValue::Number(
-                        max_depth.try_into().unwrap_or_default(),
-                    ),
-                );
-                err.insert(
-                    ContextKind::Usage,
-                    ContextValue::String(format!(
-                        "Value cannot exceed {}",
-                        MAX_DEPTH
-                    )),
-                );
-                err.exit();
-            }
-
-            println!(
-                "{} // {:?} // {:?}",
+            if let Err(error) = crawl::handler(
                 url,
-                max_depth,
-                robots_txt.unwrap_or(true)
-            )
+                max_depth.unwrap_or(1),
+                robots_txt.unwrap_or(true),
+                path,
+            ) {
+                error.exit();
+            }
         },
     }
 }
