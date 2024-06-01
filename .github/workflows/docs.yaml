@@ -3,12 +3,15 @@ name: polymath/docs
 on:
   workflow_dispatch: # Allow manual runs.
   pull_request:
+      paths:
+      - 'docs/**'
   push:
     paths:
       - 'docs/**'
 
 jobs:
   deploy:
+    name: mdBook
     runs-on: ubuntu-latest
     permissions:
       contents: write
