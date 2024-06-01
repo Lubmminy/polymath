@@ -31,7 +31,7 @@ jobs:
         echo PKG_VERSION=$(awk -F ' = ' '$1 ~ /version/ { gsub(/["]/, "", $2); printf("%s",$2) }' Cargo.toml) >> $GITHUB_OUTPUT
     - name: Build the Docker image
       run: |
-            docker build . --tag ghcr.io/lubmminy/polymath:latest
+            docker build -f docker/Dockerfile -t ghcr.io/lubmminy/polymath:latest .
             docker push ghcr.io/lubmminy/polymath:latest
             docker tag ghcr.io/lubmminy/polymath:latest ghcr.io/gravitalia/remini:${{ steps.get-tag.outputs.PKG_VERSION }}
             docker push ghcr.io/lubmminy/polymath:${{ steps.get-tag.outputs.PKG_VERSION }}
