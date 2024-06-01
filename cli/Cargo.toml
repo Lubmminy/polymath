@@ -11,4 +11,6 @@ clap = "4.5"
 clap_builder = { version = "4.5", features = ["cargo"] }
 clap_derive = "4.5"
 url = "2.5"
+
 polymath-crawler = { path = "../crates/polymath-crawler" }
+robots = { path = "../extensions/robots" }
