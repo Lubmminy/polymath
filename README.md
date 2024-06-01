@@ -1,5 +1,5 @@
 # Polymath 🕷️
-> `Polymath` comes from the Greek πολυμαθής and means "having learned much".
+> `Polymath` comes from the Greek *πολυμαθής* and means "having learned much".
 
 Here, it is a robot that will analyze the Web pages (**Crawler**) and that will bring a mass of knowledge to the world.
 Billions of sources will be analyzed to redistribute all the knowledge to the __**users**__!
@@ -29,14 +29,14 @@ flowchart TD
     end
 
     subgraph "Indexing"
-        H -->|Scoring| I[(Memgraph)]
-        I -->|Indexing| J[(Apache Solr)]
+        H -->|Indexing| J[(Apache Solr)]
         G -->|Indexing| J
     end
 ```
 
 ## Feature highlights
 - Support PDF
+- Scoring using [Lubmminy/algorithm](https://github.com/Lubmminy/algorithm)
 
 ## License
 
