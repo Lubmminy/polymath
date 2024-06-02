@@ -12,6 +12,7 @@ members = [
 
     "extensions/robots",
     "extensions/sitemap",
+    "extensions/solr",
 ]
 
 [workspace.package]
