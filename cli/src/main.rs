@@ -21,7 +21,7 @@ enum Commands {
         url: Url,
         /// Number of crawled pages.
         #[arg(short, long)]
-        max_depth: Option<usize>,
+        depth: Option<usize>,
         /// Whether crawler follow `/robots.txt`.
         #[arg(long)]
         robots_txt: Option<bool>,
@@ -39,13 +39,13 @@ fn main() {
     match args.cmd {
         Commands::Crawl {
             url,
-            max_depth,
+            depth,
             robots_txt,
             path,
         } => {
             if let Err(error) = crawl::handler(
                 url,
-                max_depth.unwrap_or(1),
+                depth.unwrap_or(1),
                 robots_txt.unwrap_or(true),
                 path,
             ) {

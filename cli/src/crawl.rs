@@ -11,11 +11,11 @@ const MAX_DEPTH: usize = 100;
 
 pub fn handler(
     url: url::Url,
-    max_depth: usize,
+    depth: usize,
     _robots_txt: bool,
     path: Option<PathBuf>,
 ) -> Result<(), clap::error::Error> {
-    if max_depth > MAX_DEPTH {
+    if depth > MAX_DEPTH {
         let mut err = Error::new(ErrorKind::ValueValidation);
         err.insert(
             ContextKind::InvalidArg,
@@ -23,7 +23,7 @@ pub fn handler(
         );
         err.insert(
             ContextKind::InvalidValue,
-            ContextValue::Number(max_depth.try_into().unwrap_or_default()),
+            ContextValue::Number(depth.try_into().unwrap_or_default()),
         );
         err.insert(
             ContextKind::Usage,
@@ -35,7 +35,7 @@ pub fn handler(
     // Announce what crawler will do.
     println!(
         "Crawling {} with a maximum of {} crawled pages.",
-        url, max_depth
+        url, depth
     );
     
     if let Some(path) = path {
