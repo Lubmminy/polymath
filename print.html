@@ -89,7 +89,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="chapter_1.html"><strong aria-hidden="true">1.</strong> Chapter 1</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Introduction</a></li><li class="chapter-item expanded affix "><li class="part-title">User Guide</li><li class="chapter-item expanded "><a href="guide/installation.html"><strong aria-hidden="true">1.</strong> Installation</a></li><li class="chapter-item expanded "><a href="guide/uninstallation.html"><strong aria-hidden="true">2.</strong> Uninstallation</a></li><li class="chapter-item expanded "><a href="guide/deployment.html"><strong aria-hidden="true">3.</strong> Deployment</a></li><li class="chapter-item expanded affix "><li class="part-title">Reference Guide</li><li class="chapter-item expanded "><a href="cli/index.html"><strong aria-hidden="true">4.</strong> Command Line Tool</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="cli/crawl.html"><strong aria-hidden="true">4.1.</strong> crawl</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">4.2.</strong> scoring</div></li></ol></li><li class="chapter-item expanded "><li class="part-title">Extension</li><li class="chapter-item expanded "><a href="extension/robots.html"><strong aria-hidden="true">5.</strong> Robots.txt</a></li><li class="chapter-item expanded "><a href="extension/sitemap.html"><strong aria-hidden="true">6.</strong> Sitemap</a></li><li class="chapter-item expanded "><a href="extension/solr.html"><strong aria-hidden="true">7.</strong> Solr</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -148,6 +148,9 @@
                         <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
+                        <a href="https://github.com/Lubmminy/polymath/tree/master/docs" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
 
                     </div>
                 </div>
@@ -174,7 +177,161 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="chapter-1"><a class="header" href="#chapter-1">Chapter 1</a></h1>
+                        <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+<p><strong>polymath</strong> is a highly modular open source web crawler.
+It has been designed to be easily modular during its processing phases.
+And it has other qualities too:</p>
+<ul>
+<li>Support PDF by default</li>
+<li>Can be used via a CLI or Kafka*</li>
+<li>Low CPU and RAM usage, thanks to Rust</li>
+</ul>
+<p>* HTTP API is planned, but wouldn’t be enabled by default.</p>
+<h2 id="license"><a class="header" href="#license">License</a></h2>
+<p>The polymath source code and documentation are released under the <a href="https://www.mozilla.org/en-US/MPL/2.0/">Mozilla Public License v2.0</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="installation"><a class="header" href="#installation">Installation</a></h1>
+<h2 id="pre-compiled-binaries"><a class="header" href="#pre-compiled-binaries">Pre-compiled binaries</a></h2>
+<p>We provide precompiled binaries on the <a href="https://github.com/Lubmminy/polymath/releases">GitHub Releases page</a>.
+Download the binary for your platform (Windows, macOS or Linux) and extract the archive.</p>
+<h2 id="download-from-source"><a class="header" href="#download-from-source">Download from source</a></h2>
+<blockquote>
+<p>You must install <a href="https://www.rust-lang.org/tools/install">Rust</a> and Cargo.</p>
+</blockquote>
+<p>Once you have installed Rust, execute the following command to build and install polymath:</p>
+<pre><code class="language-bash">cargo install --profile cli --git https://github.com/Lubmminy/polymath polymath-cli
+</code></pre>
+<p>If you want to uninstall polymath-cli, execute <code>cargo uninstall polymath-cli</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="uninstallation"><a class="header" href="#uninstallation">Uninstallation</a></h1>
+<h2 id="pre-compiled-binaries-1"><a class="header" href="#pre-compiled-binaries-1">Pre-compiled binaries</a></h2>
+<p>Simply delete the binary located in the folder where you installed it.</p>
+<p>Don’t forget also to remove the link in the <code>PATH</code>, if you have done so.</p>
+<h2 id="download-from-source-1"><a class="header" href="#download-from-source-1">Download from source</a></h2>
+<p>If you want to uninstall polymath-cli, execute <code>cargo uninstall polymath-cli</code>.</p>
+<p>You can also go to <code>~/.cargo/bin/</code>, and delete it manually.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="deployment"><a class="header" href="#deployment">Deployment</a></h1>
+<p>While the <a href="guide//cli">CLI</a> is useful to test the crawler, in production, you should prefer to deploy a server.
+Given that Polymath is a collection of libraries, you can create your own server quite easily.
+However, you can use our own server. The documentation below shows you how.</p>
+<blockquote>
+<p>⚠️ To have an <strong>API over HTTP</strong> or RPC, you need to <strong>use a customised server</strong>.</p>
+</blockquote>
+<h2 id="docker"><a class="header" href="#docker">Docker</a></h2>
+<p>We recommend that you deploy the polymath crawler using <a href="https://www.docker.com/">Docker</a> (or Podman). In this example, we’re going to deploy polymath with its extension to save pages on <strong>Apache Solr</strong>.</p>
+<p>Create a <code>docker-compose.yaml</code> and write:</p>
+<pre><code class="language-yaml">services:
+    solr:
+        image: solr:9-slim
+        ports:
+            - 8983:8983
+        volumes:
+            - data:/var/solr
+        command:
+            - solr-precreate
+            - gettingstarted
+
+    zookeeper:
+        image: wurstmeister/zookeeper
+        ports:
+            - 2181:2181
+
+    kafka:
+        image: wurstmeister/kafka
+        depends_on:
+            - zookeeper
+        ports:
+            - 9092:9092
+        environment:
+            KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9092,OUTSIDE://localhost:9093
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+            KAFKA_LISTENERS: INSIDE://0.0.0.0:9092,OUTSIDE://0.0.0.0:9093
+            KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+            KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+            KAFKA_CREATE_TOPICS: "baeldung:1:1"
+
+
+    polymath:
+        image: ghcr.io/lubmminy/polymath
+        depends_on:
+            - solr
+            - kafka
+
+volumes:
+    data:
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="command-line-tool"><a class="header" href="#command-line-tool">Command Line Tool</a></h1>
+<p>The <code>polymath</code> command-line tool is used to crawl web pages.
+After you have <a href="cli/../guide/installation.html">installed</a> <code>polymath-cli</code>, you can run the <code>polymath-cli help</code> command in your terminal to view the available commands.</p>
+<p>This following sections provide in-depth information on the different commands available.</p>
+<ul>
+<li><a href="cli/crawl.html"><code>polymath-cli crawl &lt;URL&gt;</code></a> — Crawling one web page.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="crawl"><a class="header" href="#crawl">crawl</a></h1>
+<h1 id="the-crawl-command"><a class="header" href="#the-crawl-command">The crawl command</a></h1>
+<p>Crawl command is used to fetch web pages.</p>
+<pre><code class="language-bash">polymath-cli crawl &lt;URL&gt;
+</code></pre>
+<p>You MUST specify a URL. This URL will be fetched and all other URLs within it will then be crawled.</p>
+<h4 id="--depth"><a class="header" href="#--depth"><code>--depth</code></a></h4>
+<p>When you use the <code>--depth</code> (<code>-d</code>) flag, you specify the number of pages to be fetched.</p>
+<ul>
+<li>Default: 1</li>
+<li>Maximum value: 100 (no maximum value in production)</li>
+</ul>
+<h4 id="--robots-txt"><a class="header" href="#--robots-txt"><code>--robots-txt</code></a></h4>
+<p>The <code>--robots-txt</code> flag allows you to bypass <code>/robots.txt</code>.
+This can lead to failures and rate-limitations.</p>
+<p>You <strong>must specify a boolean</strong> (true or false).
+For more details, see the <a href="cli//extension/robots.html">robots.txt extension</a>.</p>
+<h4 id="--path"><a class="header" href="#--path"><code>--path</code></a></h4>
+<p>The <code>--path</code> (<code>-p</code>) flag lets you specify a directory path where all fetched pages will be saved as text content. Alternatively, use <code>--solr-address</code> to save pages on Apache Solr instead of hard text.</p>
+<h4 id="--solr-address"><a class="header" href="#--solr-address"><code>--solr-address</code></a></h4>
+<p>The <code>--solr-address</code> option allows to conect crawler on Solr collection.</p>
+<p>Example: <code>--solr-address http://localhost:8983/api/collections/websites</code></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="robotstxt"><a class="header" href="#robotstxt">Robots.txt</a></h1>
+<p>This extension allows web crawlers to access and respect instructions from a website’s <code>robots.txt</code> file before starting the crawl.</p>
+<p>A <code>robots.txt</code> file is a text file on a website that tells search engine crawlers (like bots) which parts of the site they can access.
+The extension supports two main directives from <code>robots.txt</code>:</p>
+<ul>
+<li><code>Crawl-delay</code>: specify and set the number of seconds the robot must wait between each successive request.</li>
+<li><code>Disallow</code>: prevents the crawler from accessing specific URLs or directories on the website.</li>
+</ul>
+<p>The extension also checks for meta robots tags in web pages, which provide additional instructions for crawling alongside robots.txt.  For more information on meta robots, see <a href="https://robots-txt.com/meta-robots/">More information</a>.</p>
+<p>The extension can also be used to get sitemaps from robots.txt.</p>
+<h2 id="example"><a class="header" href="#example">Example</a></h2>
+<pre><pre class="playground"><code class="language-rust">use polymath_crawler::Crawler;
+use robots::Extension;
+
+#[tokio::main]
+async fn main() {
+    // Create custom crawler.
+    let crawler = Crawler::new()
+        .with_robots_txt(true)
+        .with_name("Gravitaliabot");
+
+    // Start crawling websites.
+    // It will firsly check https://example.com/robots.txt before
+    // crawling site.
+    crawler.fetch(vec!["https://example.com/"]).await;
+}</code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="sitemap"><a class="header" href="#sitemap">Sitemap</a></h1>
+<p>This extension allows you to access and read the sitemaps provided by the site. Either by looking directly at <code>/sitemap.xml</code>, or via <code>/robots.txt</code>.</p>
+<h2 id="example-1"><a class="header" href="#example-1">Example</a></h2>
+<pre><pre class="playground"><code class="language-rust">use polymath_crawler::Crawler;
+use sitemap::Extension;
+
+#[tokio::main]
+async fn main() {
+    // Create custom crawler.
+    let crawler = Crawler::new()
+        .with_sitemap(true);
+
+    // Start crawling websites.
+    // It will firsly check https://example.com/robots.txt before
+    // crawling site.
+    crawler.fetch(vec!["https://example.com/"]).await;
+}</code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="solr"><a class="header" href="#solr">Solr</a></h1>
+<p>The Solr extension lets you save crawled pages in an Apache Solr collection.</p>
 
                     </main>
 
