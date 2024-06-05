@@ -4,3 +4,8 @@ language = "en"
 multilingual = false
 src = "src"
 title = "Polymath"
+
+[output.html]
+smart-punctuation = true
+git-repository-url = "https://github.com/Lubmminy/polymath/tree/master/docs"
+edit-url-template = "https://github.com/Lubmminy/polymath/tree/master/docs/{path}"
