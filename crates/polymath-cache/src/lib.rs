@@ -1,6 +1,5 @@
 #![forbid(unsafe_code)]
 #![deny(
-    dead_code,
     unused_imports,
     unused_mut,
     missing_docs,
@@ -15,4 +14,4 @@
 //! LRU should be used to cache recently seen URLs or robots.txt while
 //! headers-based should be used to know if a page needs re-indexation.
 
-mod lru;
+pub mod lru;
