@@ -7,15 +7,6 @@
     missing_debug_implementations
 )]
 //! internal library to provide structures for errors in polymath.
-//!
-//! # Examples
-//! ```rust
-//! use polymath_error::Result;
-//!
-//! fn main() -> Result<()> {
-//!     Ok(())
-//! }
-//! ```
 
 use std::error::Error as StdError;
 use std::fmt;
@@ -62,8 +53,10 @@ impl StdError for Error {}
 pub enum ErrorType {
     /// Generic error that returns no additional information.
     Unspecified,
-    /// Errors related to `polymath-db`.
+    /// Errors related to databases/message brokers.
     Database(DatabaseError),
+    /// Errors related to databases/message brokers.
+    Crawler(CrawlerError),
 }
 
 impl fmt::Display for ErrorType {
@@ -73,12 +66,13 @@ impl fmt::Display for ErrorType {
                 write!(f, "An error has occurred, but no further information is provided.")
             },
             ErrorType::Database(error) => write!(f, "{:?}", error),
+            ErrorType::Crawler(error) => write!(f, "{:?}", error),
         }
     }
 }
 impl StdError for ErrorType {}
 
-/// Errors related to `polymath-db`.
+/// Errors related to databases/message brokers.
 #[derive(Debug)]
 pub enum DatabaseError {
     /// The connection pool has not been created correctly.
@@ -106,3 +100,22 @@ impl fmt::Display for DatabaseError {
 }
 
 impl StdError for DatabaseError {}
+
+/// Errors related to `polymath-crawler`.
+#[derive(Debug)]
+pub enum CrawlerError {
+    /// The domain is outside the allowed domains.
+    InvalidDomain,
+}
+
+impl fmt::Display for CrawlerError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CrawlerError::InvalidDomain => {
+                write!(f, "The domain is outside the allowed domains.")
+            },
+        }
+    }
+}
+
+impl StdError for CrawlerError {}
