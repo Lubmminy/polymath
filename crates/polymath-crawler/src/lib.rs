@@ -14,6 +14,7 @@ mod extractor;
 extern crate lazy_static;
 
 use polymath_cache::lru::LRUCache;
+use polymath_error::CrawlerError;
 use regex_lite::Regex;
 use std::{collections::HashMap, time::Duration};
 
@@ -132,7 +133,19 @@ impl Crawler {
     /// Crawl a page and extract its substantifique moelle.
     pub fn fetch(&mut self, url: String) -> Result<(), polymath_error::Error> {
         if !self.allowed_domains.is_empty() && self.test_domain(&url) {
-            // Domain is not valid.
+            return Err(
+                polymath_error::Error::new(
+                    polymath_error::ErrorType::Crawler(CrawlerError::InvalidDomain),
+                    None,
+                    Some(
+                        format!(
+                            "You have specified a domain limit ({:?}) and {} is not one of them.",
+                            self.allowed_domains,
+                            url
+                        )
+                    )
+                )
+            );
         }
 
         let agent = ureq::AgentBuilder::new()
