@@ -2,7 +2,10 @@
 
 use std::collections::{HashMap, VecDeque};
 
-struct LRUCache<K, V> {
+/// Least recently used cache evicts the least recently
+/// accessed items first.
+#[derive(Default, Debug)]
+pub struct LRUCache<K, V> {
     capacity: usize,
     map: HashMap<K, V>,
     order: VecDeque<K>,
@@ -57,6 +60,16 @@ impl<K: Eq + std::hash::Hash + Clone, V> LRUCache<K, V> {
             self.order.push_back(key);
         }
     }
+
+    /// Update an entry.
+    pub fn update(&mut self, key: &K, value: V) {
+        if self.map.contains_key(key) {
+            // Update the value and move the key to the back of the order queue.
+            self.map.insert(key.clone(), value);
+            self.order.retain(|k| k != key);
+            self.order.push_back(key.clone());
+        }
+    }
 }
 
 #[cfg(test)]
@@ -85,5 +98,22 @@ mod test {
         assert_eq!(cache.len(), 2);
 
         assert_eq!(cache.get(&"gravitalia.com/robots.txt"), None);
+    }
+
+    #[test]
+    fn test_update() {
+        let mut cache = LRUCache::with_capacity(1);
+        cache.put("gravitalia.com/robots.txt", "User-agent: *\nAllow: /");
+        assert_eq!(
+            cache.get(&"gravitalia.com/robots.txt"),
+            Some(&"User-agent: *\nAllow: /")
+        );
+
+        cache
+            .update(&"gravitalia.com/robots.txt", "User-agent: *\nDisallow: /");
+        assert_eq!(
+            cache.get(&"gravitalia.com/robots.txt"),
+            Some(&"User-agent: *\nDisallow: /")
+        );
     }
 }
