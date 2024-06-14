@@ -12,6 +12,7 @@ ureq = "2.9"
 url = "2.5"
 lazy_static = "1.4"
 scraper = "0.19"
+tracing = "0.1"
 polymath-cache = { path = "../polymath-cache" }
 polymath-error = { path = "../polymath-error" }
 polymath-queue = { path = "../polymath-queue" }
