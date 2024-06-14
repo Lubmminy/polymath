@@ -17,6 +17,7 @@ use polymath_cache::lru::LRUCache;
 use polymath_error::CrawlerError;
 use regex_lite::Regex;
 use std::{collections::HashMap, time::Duration};
+use tracing::{error, debug};
 
 const ALLOWED_EXT: [&str; 16] = [
     "pdf", // Adobe Portable Document Format
@@ -148,6 +149,7 @@ impl Crawler {
             );
         }
 
+        debug!("uReq agent creation.");
         let agent = ureq::AgentBuilder::new()
             .timeout(Duration::from_secs(self.timeout))
             .redirects(if self.follow_redirects { 3 } else { 0 })
@@ -162,9 +164,10 @@ impl Crawler {
 
         self.depth.put(url.clone(), 0);
 
+        debug!("Fetch {} using the agent.", url);
         let body = request.call().unwrap().into_string().unwrap();
 
-        for _link in extractor::link::find_all_links(&body) {
+        for link in extractor::link::find_all_links(&body) {
             let depth = *self.depth.get(&url).unwrap_or(&0);
             self.depth.update(&url, depth + 1);
 
@@ -174,6 +177,7 @@ impl Crawler {
                 }
             }
 
+            debug!("Found {} URL on {}", link, url);
             // Fetch new page.
         }
 
@@ -186,7 +190,12 @@ impl Crawler {
                 url.host_str()
                     .map(|host| {
                         self.allowed_domains.iter().any(|domain| {
-                            Regex::new(domain).unwrap().is_match(host)
+                            if let Ok(regex) = Regex::new(domain) {
+                                regex.is_match(host)
+                            } else {
+                                error!(regex = domain, "Regex is not a valid expression.");
+                                false
+                            }
                         })
                     })
                     .unwrap_or(false)
