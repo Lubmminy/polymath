@@ -71,6 +71,8 @@ pub enum ErrorType {
     Database(DatabaseError),
     /// Errors related to the crawler.
     Crawler(CrawlerError),
+    /// Errors related to the scraper.
+    Scraper(ScraperError),
 }
 
 impl fmt::Display for ErrorType {
@@ -83,6 +85,9 @@ impl fmt::Display for ErrorType {
                 write!(f, "{}", error)
             },
             ErrorType::Crawler(ref error) => {
+                write!(f, "{}", error)
+            },
+            ErrorType::Scraper(ref error) => {
                 write!(f, "{}", error)
             },
         }
@@ -119,6 +124,25 @@ impl fmt::Display for DatabaseError {
 }
 
 impl StdError for DatabaseError {}
+
+/// Errors related to scraping.
+#[derive(Debug)]
+pub enum ScraperError {
+    /// [`scraper::error::SelectorErrorKind`] error.
+    Selector,
+}
+
+impl fmt::Display for ScraperError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ScraperError::Selector => {
+                write!(f, "Selector attribute is not valid.")
+            },
+        }
+    }
+}
+
+impl StdError for ScraperError {}
 
 /// Errors related to the `polymath-crawler`.
 #[derive(Debug)]
