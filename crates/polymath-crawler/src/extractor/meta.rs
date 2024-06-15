@@ -1,15 +1,27 @@
+//! Meta tag extraction.
+
 use polymath_error::{Error, ErrorType::Scraper, ScraperError};
 use scraper::{Html, Selector};
 
-/// Representation of data contained in a meta tag.
+/// Representation of data contained in a
+/// [`<meta>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta) tag.
 #[derive(Debug, Default, Clone, PartialEq)]
 #[allow(dead_code)]
-pub(crate) struct Meta {
+pub struct Meta {
+    /// A non-standard attribute used primarily
+    /// with the [Open Graph](https://ogp.me/) protocol.
     pub property: Option<String>,
+    /// Metadata name.
     pub name: Option<String>,
+    /// Metadata value containing value for the
+    /// `http-equiv` or `name` attribute.
     pub content: Option<String>,
+    /// Document's character encoding.
     pub charset: Option<String>,
+    /// Refer to
+    /// [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#http-equiv).
     pub http_equiv: Option<String>,
+    /// Specify a scheme to interpret the property’s value.
     pub scheme: Option<String>,
 }
 
