@@ -10,7 +10,7 @@ license.workspace = true
 regex-lite = "0.1"
 ureq = "2.9"
 url = "2.5"
-lazy_static = "1.4"
+lazy_static = "1.5"
 scraper = "0.19"
 tracing = "0.1"
 polymath-cache = { path = "../polymath-cache" }
