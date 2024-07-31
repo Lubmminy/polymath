@@ -149,6 +149,10 @@ impl StdError for ScraperError {}
 pub enum CrawlerError {
     /// The domain is not allowed.
     InvalidDomain,
+    /// The network encountered a problem during request transmission.
+    NetworkError,
+    /// The request body could not be read.
+    ParseError,
 }
 
 impl fmt::Display for CrawlerError {
@@ -156,6 +160,12 @@ impl fmt::Display for CrawlerError {
         match self {
             CrawlerError::InvalidDomain => {
                 write!(f, "The domain is not within the allowed domains.")
+            },
+            CrawlerError::NetworkError => {
+                write!(f, "The network encountered a problem during request transmission.")
+            },
+            CrawlerError::ParseError => {
+                write!(f, "The request body could not be read.")
             },
         }
     }

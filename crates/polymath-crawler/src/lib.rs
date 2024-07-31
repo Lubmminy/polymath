@@ -13,11 +13,13 @@ pub mod extractor;
 #[macro_use]
 extern crate lazy_static;
 
+use extractor::meta::Meta;
 use polymath_cache::lru::LRUCache;
 use polymath_error::CrawlerError;
 use regex_lite::Regex;
 use std::{collections::HashMap, fmt::Debug, time::Duration};
 use tracing::{debug, error};
+use ureq::{Agent, Request};
 
 const ALLOWED_EXT: [&str; 16] = [
     "pdf", // Adobe Portable Document Format
@@ -192,54 +194,45 @@ impl Crawler {
         self
     }
 
-    /// Crawl a page and extract its substantifique moelle.
-    pub fn fetch(&mut self, url: String) -> Result<(), polymath_error::Error> {
+    fn pre_process(&self, url: &str) -> Result<(), polymath_error::Error> {
         for event in &self.events {
             event.before_request(&url)?;
         }
 
-        if !self.allowed_domains.is_empty() && self.test_domain(&url) {
-            return Err(
-                polymath_error::Error::new(
-                    polymath_error::ErrorType::Crawler(CrawlerError::InvalidDomain),
-                    None,
-                    Some(
-                        format!(
-                            "You have specified a domain limit ({:?}) and {} is not one of them.",
-                            self.allowed_domains,
-                            url
-                        )
-                    )
-                )
-            );
-        }
+        Ok(())
+    }
 
-        debug!("uReq agent creation.");
-        let agent = ureq::AgentBuilder::new()
+    fn create_agent(&self, url: &str) -> (Agent, Request) {
+        debug!("Creating HTTP agent to perform request.");
+
+        let agent: Agent = ureq::AgentBuilder::new()
             .timeout(Duration::from_secs(self.timeout))
             .redirects(if self.follow_redirects { 3 } else { 0 })
             .user_agent(&self.user_agent)
             .build();
 
-        let mut request = agent.get(&url);
+        let request = agent.get(url);
+        let request = self
+            .headers
+            .iter()
+            .fold(request, |req, (key, value)| req.set(key, value));
 
-        for (key, value) in &self.headers {
-            request = request.clone().set(key, value);
-        }
+        (agent, request)
+    }
 
-        self.depth.put(url.clone(), 0);
-
-        debug!("Fetch {} using the agent.", url);
-        let body = request.call().unwrap().into_string().unwrap();
-
-        let meta = extractor::meta::extract_meta_tags(&body)?;
-
+    fn post_process(
+        &mut self,
+        agent: &Agent,
+        url: String,
+        meta: Vec<Meta>,
+        body: &str,
+    ) -> Result<(), polymath_error::Error> {
         for event in &self.events {
             // We do not care about result here.
-            let _ = event.after_request("", meta.clone(), &body);
+            let _ = event.after_request("", meta.clone(), body);
         }
 
-        for link in extractor::link::find_all_links(&body) {
+        for link in extractor::link::find_all_links(body) {
             let depth = *self.depth.get(&url).unwrap_or(&0);
             self.depth.update(&url, depth + 1);
 
@@ -256,15 +249,130 @@ impl Crawler {
         Ok(())
     }
 
+    /// Just fetch one page and return its content.
+    /// Disabling `pre_process` enables crawling of any page, regardless of options and extensions.
+    pub fn just_fetch(
+        &self,
+        url: String,
+        pre_process: bool,
+        post_process: bool,
+    ) -> Result<String, polymath_error::Error> {
+        if pre_process {
+            self.pre_process(&url)?;
+
+            if !self.allowed_domains.is_empty() && self.test_domain(&url) {
+                return Err(
+                    polymath_error::Error::new(
+                        polymath_error::ErrorType::Crawler(CrawlerError::InvalidDomain),
+                        None,
+                        Some(
+                            format!(
+                                "You have specified a domain limit ({:?}) and {} is not one of them.",
+                                self.allowed_domains,
+                                url
+                            )
+                        )
+                    )
+                );
+            }
+        }
+
+        let (_, request) = self.create_agent(&url);
+
+        debug!("Fetch {} using the agent.", url);
+        let body = request
+            .call()
+            .map_err(|e| {
+                polymath_error::Error::new(
+                    polymath_error::ErrorType::Crawler(
+                        CrawlerError::NetworkError,
+                    ),
+                    Some(Box::new(e)),
+                    None,
+                )
+            })?
+            .into_string()
+            .map_err(|e| {
+                polymath_error::Error::new(
+                    polymath_error::ErrorType::Crawler(
+                        CrawlerError::ParseError,
+                    ),
+                    Some(Box::new(e)),
+                    None,
+                )
+            })?;
+
+        if post_process {
+            let meta = extractor::meta::extract_meta_tags(&body)?;
+
+            for event in &self.events {
+                let _ = event.after_request("", meta.clone(), &body);
+            }
+        }
+
+        Ok(body)
+    }
+
+    /// Crawl a page and extract its substantifique moelle.
+    pub fn fetch(&mut self, url: String) -> Result<(), polymath_error::Error> {
+        self.pre_process(&url)?;
+
+        if !self.allowed_domains.is_empty() && self.test_domain(&url) {
+            return Err(
+                polymath_error::Error::new(
+                    polymath_error::ErrorType::Crawler(CrawlerError::InvalidDomain),
+                    None,
+                    Some(
+                        format!(
+                            "You have specified a domain limit ({:?}) and {} is not one of them.",
+                            self.allowed_domains,
+                            url
+                        )
+                    )
+                )
+            );
+        }
+
+        let (agent, request) = self.create_agent(&url);
+
+        self.depth.put(url.clone(), 0);
+
+        debug!("Fetch {} using the agent.", url);
+
+        let body = request
+            .call()
+            .map_err(|e| {
+                polymath_error::Error::new(
+                    polymath_error::ErrorType::Crawler(
+                        CrawlerError::NetworkError,
+                    ),
+                    Some(Box::new(e)),
+                    None,
+                )
+            })?
+            .into_string()
+            .map_err(|e| {
+                polymath_error::Error::new(
+                    polymath_error::ErrorType::Crawler(
+                        CrawlerError::ParseError,
+                    ),
+                    Some(Box::new(e)),
+                    None,
+                )
+            })?;
+        let meta = extractor::meta::extract_meta_tags(&body)?;
+        self.post_process(&agent, url, meta, &body)?;
+
+        Ok(())
+    }
+
     fn internal_fetch(
         &mut self,
         from: String,
         agent: &ureq::Agent,
         url: String,
     ) -> Result<(), polymath_error::Error> {
-        for event in &self.events {
-            event.before_request(&url)?;
-        }
+        self.pre_process(&url)?;
 
         if !self.allowed_domains.is_empty() && self.test_domain(&url) {
             return Err(
@@ -289,28 +397,31 @@ impl Crawler {
         }
 
         debug!("Fetch {} using the agent.", url);
-        let body = request.call().unwrap().into_string().unwrap();
+        let body = request
+            .call()
+            .map_err(|e| {
+                polymath_error::Error::new(
+                    polymath_error::ErrorType::Crawler(
+                        CrawlerError::NetworkError,
+                    ),
+                    Some(Box::new(e)),
+                    None,
+                )
+            })?
+            .into_string()
+            .map_err(|e| {
+                polymath_error::Error::new(
+                    polymath_error::ErrorType::Crawler(
+                        CrawlerError::ParseError,
+                    ),
+                    Some(Box::new(e)),
+                    None,
+                )
+            })?;
 
         let meta = extractor::meta::extract_meta_tags(&body)?;
 
-        for event in &self.events {
-            // We do not care about result here.
-            let _ = event.after_request("", meta.clone(), &body);
-        }
-
-        for link in extractor::link::find_all_links(&body) {
-            let depth = *self.depth.get(&from).unwrap_or(&0);
-            self.depth.update(&from, depth + 1);
-
-            if let Some(depth) = self.max_depth {
-                if self.depth.get(&from).unwrap_or(&0) >= &depth {
-                    break;
-                }
-            }
-
-            debug!("Found {} URL on {}", link, url);
-            self.internal_fetch(from.clone(), agent, link)?;
-        }
+        self.post_process(&agent, from, meta, &body)?;
 
         Ok(())
     }
