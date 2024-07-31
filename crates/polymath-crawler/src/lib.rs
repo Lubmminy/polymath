@@ -70,7 +70,7 @@ const ALLOWED_EXT: [&str; 16] = [
 /// }
 
 /// ```
-pub trait Event: Debug {
+pub trait Event: Debug + Send + Sync {
     /// Called before a URL request is made.
     ///
     /// This method is used to perform actions or checks before initiating the crawl of a URL.
@@ -127,66 +127,66 @@ impl Crawler {
     /// Domains muse use regular expressions patterns
     /// (such as `[\w@:%._+~#=-]{1,256}\.gravitalia(\.com)?$`, to crawl
     /// only gravitalia domains).
-    pub fn allowed_domains(&mut self, domains: Vec<String>) -> &Self {
+    pub fn allowed_domains(mut self, domains: Vec<String>) -> Self {
         self.allowed_domains = domains;
         self
     }
 
     /// Defines the file extensions that the crawler should fetch.
     /// Files with extensions not listed here will be excluded from the crawl.
-    pub fn allowed_extensions(&mut self, extensions: Vec<String>) -> &Self {
+    pub fn allowed_extensions(mut self, extensions: Vec<String>) -> Self {
         self.extensions = extensions;
         self
     }
 
     /// Sets whether the crawler should follow HTTP redirects.
     /// If set to false, the crawler stops when it encounters a redirect.
-    pub fn follow_redirects(&mut self, follow_redirects: bool) -> &Self {
+    pub fn follow_redirects(mut self, follow_redirects: bool) -> Self {
         self.follow_redirects = follow_redirects;
         self
     }
 
     /// Adds a custom HTTP header to be included in each request.
-    pub fn add_headers(&mut self, key: String, value: String) -> &Self {
+    pub fn add_headers(mut self, key: String, value: String) -> Self {
         self.headers.insert(key, value);
         self
     }
 
     /// Sets a maximum depth for the crawler. The depth is the number of hops
     /// the crawler can make from the starting URL.
-    pub fn depth(&mut self, depth: usize) -> &Self {
+    pub fn depth(mut self, depth: usize) -> Self {
         self.max_depth = Some(depth);
         self
     }
 
     /// Add new receivers to Crawler [Events](Event).
-    pub fn register_event(&mut self, event: Box<dyn Event>) {
+    pub fn register_event(mut self, event: Box<dyn Event>) {
         self.events.push(event);
     }
 
     /// Specifies the number of retry attempts for failed requests
     /// (e.g., due to 4XX, 5XX errors, or timeouts).
-    pub fn retry(&mut self, retry_count: usize) -> &Self {
+    pub fn retry(mut self, retry_count: usize) -> Self {
         self.retry_count = retry_count;
         self
     }
 
     /// Sets the delay between retry attempts for failed requests.
-    pub fn retry_after(&mut self, duration: Duration) -> &Self {
+    pub fn retry_after(mut self, duration: Duration) -> Self {
         self.retry_after = duration.as_secs();
         self
     }
 
     /// Sets the timeout duration for each request. If a response is not received
     /// within this time, the request is considered to have failed.
-    pub fn timeout(&mut self, duration: Duration) -> &Self {
+    pub fn timeout(mut self, duration: Duration) -> Self {
         self.timeout = duration.as_secs();
         self
     }
 
     /// Sets a custom user agent string for the crawler. This is used in the HTTP
     /// request headers to identify the client making the requests.
-    pub fn user_agent(&mut self, user_agent: String) -> &Self {
+    pub fn user_agent(mut self, user_agent: String) -> Self {
         self.user_agent = user_agent;
         self
     }
@@ -249,7 +249,66 @@ impl Crawler {
             }
 
             debug!("Found {} URL on {}", link, url);
-            // Fetch new page.
+            self.internal_fetch(url.clone(), &agent, link)?;
+        }
+
+        Ok(())
+    }
+
+    fn internal_fetch(
+        &mut self,
+        from: String,
+        agent: &ureq::Agent,
+        url: String,
+    ) -> Result<(), polymath_error::Error> {
+        for event in &self.events {
+            event.before_request(&url)?;
+        }
+
+        if !self.allowed_domains.is_empty() && self.test_domain(&url) {
+            return Err(
+                polymath_error::Error::new(
+                    polymath_error::ErrorType::Crawler(CrawlerError::InvalidDomain),
+                    None,
+                    Some(
+                        format!(
+                            "You have specified a domain limit ({:?}) and {} is not one of them.",
+                            self.allowed_domains,
+                            url
+                        )
+                    )
+                )
+            );
+        }
+
+        let mut request = agent.get(&url);
+
+        for (key, value) in &self.headers {
+            request = request.clone().set(key, value);
+        }
+
+        debug!("Fetch {} using the agent.", url);
+        let body = request.call().unwrap().into_string().unwrap();
+
+        let meta = extractor::meta::extract_meta_tags(&body)?;
+
+        for event in &self.events {
+            // We do not care about result here.
+            let _ = event.after_request("", meta.clone(), &body);
+        }
+
+        for link in extractor::link::find_all_links(&body) {
+            let depth = *self.depth.get(&from).unwrap_or(&0);
+            self.depth.update(&from, depth + 1);
+
+            if let Some(depth) = self.max_depth {
+                if self.depth.get(&from).unwrap_or(&0) >= &depth {
+                    break;
+                }
+            }
+
+            debug!("Found {} URL on {}", link, url);
+            self.internal_fetch(from.clone(), agent, link)?;
         }
 
         Ok(())
