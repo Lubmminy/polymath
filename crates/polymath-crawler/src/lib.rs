@@ -160,8 +160,9 @@ impl Crawler {
     }
 
     /// Add new receivers to Crawler [Events](Event).
-    pub fn register_event(mut self, event: Box<dyn Event>) {
+    pub fn register_event(mut self, event: Box<dyn Event>) -> Self {
         self.events.push(event);
+        self
     }
 
     /// Specifies the number of retry attempts for failed requests
