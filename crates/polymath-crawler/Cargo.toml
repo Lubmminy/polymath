@@ -11,7 +11,7 @@ regex-lite = "0.1"
 ureq = "2.10"
 url = "2.5"
 lazy_static = "1.5"
-scraper = "0.19"
+scraper = "0.20"
 tracing = "0.1"
 polymath-cache = { path = "../polymath-cache" }
 polymath-error = { path = "../polymath-error" }
