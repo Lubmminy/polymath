@@ -117,9 +117,9 @@ dependencies = [
 
 [[package]]
 name = "async-executor-trait"
-version = "2.1.0"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a5fa99a01e077f2a30248b27bf7ffe42ef56a9430876233ded05365f43cc789"
+checksum = "4140afffd6943ab0f72fb69f2ed0d8191ce0adc61e6bdcf05d11be2b395b54dd"
 dependencies = [
  "async-std",
  "async-trait",
