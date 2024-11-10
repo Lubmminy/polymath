@@ -15,7 +15,7 @@ members = [
 ]
 
 [workspace.package]
-version = "1.0.0"
+version = "0.1.0"
 description = "web crawler"
 readme = "README.md"
 edition = "2021"
