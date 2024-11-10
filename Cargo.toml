@@ -3,7 +3,6 @@ resolver = "2"
 members = [
     "cli",
 
-    "crates/deadpool-kafka",
     "crates/polymath",
     "crates/polymath-cache",
     "crates/polymath-crawler",
