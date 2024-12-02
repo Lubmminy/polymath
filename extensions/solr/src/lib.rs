@@ -1,14 +1,20 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+use polymath_crawler::extractor::meta::Meta;
+use polymath_crawler::{Crawler, Event};
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[derive(Debug)]
+struct Solr(Crawler);
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+impl Event for Solr {
+    fn before_request(&self, _url: &str) -> Result<(), polymath_error::Error> {
+        Ok(())
+    }
+
+    fn after_request(
+        &self,
+        _title: &str,
+        _meta: Vec<Meta>,
+        _html: &str,
+    ) -> Result<(), polymath_error::Error> {
+        Ok(())
     }
 }
